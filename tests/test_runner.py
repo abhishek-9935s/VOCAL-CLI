@@ -78,3 +78,22 @@ def test_powershell_command_preserves_exit_status_on_windows(monkeypatch):
     assert run_command("Write-Error 'expected test failure'").exit_code == 1
     assert run_command("exit 13").exit_code == 13
     assert run_command("Write-Output 'success'").exit_code == 0
+
+
+def test_cmd_command_uses_raw_shell_quoting():
+    from vocal.terminal.runner import _cmd_command
+    command = '"C:\\Program Files\\python.exe" -c "print(7); raise SystemExit(7)"'
+    result = _cmd_command(r"C:\Program Files\cmd.exe", command)
+    assert result == f'"C:\\Program Files\\cmd.exe" /d /s /c "{command}"'
+
+
+def test_cmd_quoted_metacharacters_on_windows(monkeypatch):
+    import os
+    import pytest
+    if os.name != "nt":
+        pytest.skip("cmd.exe integration test requires Windows")
+    from vocal.context import system
+    monkeypatch.setattr(system, "shell_executable", lambda: os.environ.get("COMSPEC", "cmd.exe"))
+    result = run_command('echo "a & b"')
+    assert result.exit_code == 0
+    assert '"a & b"' in result.output_tail

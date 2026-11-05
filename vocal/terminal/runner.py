@@ -17,7 +17,14 @@ def _tail(chunks) -> str:
     return "\n".join(text.splitlines()[-20:])[-16000:]
 
 
-def _shell_command(command: str) -> list[str]:
+def _cmd_command(shell: str, command: str) -> str:
+    # cmd.exe /s /c expects its command as a raw command-line tail enclosed in
+    # one pair of quotes. Passing it as a list makes Windows escape inner quotes
+    # using C-runtime rules, which cmd.exe does not understand.
+    return f'{subprocess.list2cmdline([shell])} /d /s /c "{command}"'
+
+
+def _shell_command(command: str) -> list[str] | str:
     from ..context.system import shell_executable
     shell = shell_executable()
     if os.name == "nt":
@@ -33,7 +40,7 @@ def _shell_command(command: str) -> list[str]:
                 "exit 1"
             )
             return [shell, "-NoProfile", "-Command", script]
-        return [shell, "/c", command]
+        return _cmd_command(shell, command)
     return [shell, "-c", command]
 
 
