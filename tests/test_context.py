@@ -55,13 +55,18 @@ def test_git_counts_and_truncation():
 
 
 def test_parent_shell_is_used_for_context_and_execution(monkeypatch):
+    import os
     from types import SimpleNamespace
     from vocal.context import system
     from vocal.terminal.runner import _shell_command
-    parent = SimpleNamespace(name=lambda: "fish", exe=lambda: "/usr/bin/fish")
+    if os.name == "nt":
+        name, executable = "pwsh.exe", r"C:\Program Files\PowerShell\7\pwsh.exe"
+    else:
+        name, executable = "fish", "/usr/bin/fish"
+    parent = SimpleNamespace(name=lambda: name, exe=lambda: executable)
     monkeypatch.setattr(system.psutil, "Process", lambda: SimpleNamespace(parent=lambda: parent))
-    assert system.active_shell() == "fish"
-    assert _shell_command("echo hi")[0] == "/usr/bin/fish"
+    assert system.active_shell() == name
+    assert _shell_command("echo hi")[0] == executable
 
 
 def test_real_git_repository(tmp_path, monkeypatch):
