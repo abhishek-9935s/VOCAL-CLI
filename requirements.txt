@@ -1,0 +1,2 @@
+# Install audio and local transcription separately with pip install '.[audio,local-stt]'.
+-e .
