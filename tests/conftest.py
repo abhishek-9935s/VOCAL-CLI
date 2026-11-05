@@ -8,4 +8,4 @@ def pytest_runtest_logreport(report):
         # signs to be escaped so multiline tracebacks stay in one annotation.
         message = f"{report.nodeid}\n{report.longreprtext}"
         message = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-        print(f"::error title=pytest failure::{message}", flush=True)
+        print(f"\n::error title=pytest failure::{message}", flush=True)
