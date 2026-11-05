@@ -22,7 +22,17 @@ def _shell_command(command: str) -> list[str]:
     shell = shell_executable()
     if os.name == "nt":
         if "powershell" in shell.lower() or "pwsh" in shell.lower():
-            return [shell, "-NoProfile", "-Command", command]
+            # PowerShell's -Command collapses native process failures to 1. Preserve
+            # a native exit status when it is available while retaining 1 for a
+            # failed PowerShell command that has no native status. Explicit `exit`
+            # in the user's command still terminates the shell immediately.
+            script = (
+                "$global:LASTEXITCODE = $null\n" + command + "\n"
+                "if ($?) { exit 0 }\n"
+                "if ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n"
+                "exit 1"
+            )
+            return [shell, "-NoProfile", "-Command", script]
         return [shell, "/c", command]
     return [shell, "-c", command]
 

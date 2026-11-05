@@ -1,12 +1,16 @@
 from vocal.terminal.runner import run_command
 
 
-def test_non_interactive_execution_and_failure(capsys):
+def test_non_interactive_execution_and_failure(capsys, monkeypatch):
     import os
     import shlex
     import subprocess
     import sys
     args = [sys.executable, "-c", "print('first'); print('second'); raise SystemExit(7)"]
+    if os.name == "nt":
+        # list2cmdline produces cmd.exe syntax, not PowerShell's quoting syntax.
+        from vocal.context import system
+        monkeypatch.setattr(system, "shell_executable", lambda: os.environ.get("COMSPEC", "cmd.exe"))
     command = subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
     result = run_command(command)
     assert result.exit_code == 7
@@ -54,3 +58,23 @@ assert os.waitstatus_to_exitcode(status) == 0, (status, output)
 '''
     result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, timeout=10)
     assert result.returncode == 0, result.stderr
+
+
+def test_powershell_command_preserves_exit_status_on_windows(monkeypatch):
+    import os
+    import shutil
+    import sys
+    import pytest
+    if os.name != "nt":
+        pytest.skip("PowerShell integration test requires Windows")
+    shell = shutil.which("powershell.exe")
+    if not shell:
+        pytest.skip("Windows PowerShell not installed")
+    from vocal.context import system
+    monkeypatch.setattr(system, "shell_executable", lambda: shell)
+    executable = sys.executable.replace("'", "''")
+    command = f"& '{executable}' -c 'import sys; sys.exit(7)'"
+    assert run_command(command).exit_code == 7
+    assert run_command("Write-Error 'expected test failure'").exit_code == 1
+    assert run_command("exit 13").exit_code == 13
+    assert run_command("Write-Output 'success'").exit_code == 0
