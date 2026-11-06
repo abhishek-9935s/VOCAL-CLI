@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vocalcli"
+version = "0.1.0"
+description = "A human-in-the-loop voice and text terminal companion"
+readme = "README.md"
+keywords = ["cli", "terminal", "voice", "developer-tools"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dependencies = ["typer>=0.12", "rich>=13", "pydantic>=2", "openai>=1.100", "google-genai>=1.50", "psutil>=5.9", "pyperclip>=1.8"]
+
+[project.urls]
+Repository = "https://github.com/abhishek-9935s/VOCAL-CLI"
+Issues = "https://github.com/abhishek-9935s/VOCAL-CLI/issues"
+
+[project.optional-dependencies]
+audio = ["sounddevice>=0.4.6", "numpy>=1.24"]
+local-stt = ["faster-whisper>=1"]
+dev = ["pytest>=7", "numpy>=1.24"]
+
+[project.scripts]
+vocal = "vocal.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["vocal*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
